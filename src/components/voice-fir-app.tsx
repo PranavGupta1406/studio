@@ -11,13 +11,13 @@ import { determineSeriousnessLevel } from '@/ai/flows/determine-seriousness-leve
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { StepIndicator } from '@/components/step-indicator';
+import { ProcessFlowHeader } from '@/components/process-flow-header';
 import { SeriousnessBadge, type Seriousness } from '@/components/seriousness-badge';
 import { generatePdf } from '@/lib/pdf-generator';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-type Step = 'speak' | 'processing' | 'review';
+type Step = 'record' | 'processing' | 'draft' | 'validated';
 
 const CircularProgress = ({ value }: { value: number }) => {
   const radius = 56;
@@ -48,7 +48,6 @@ const CircularProgress = ({ value }: { value: number }) => {
   );
 };
 
-
 export function VoiceFirApp() {
   const [incidentContent, setIncidentContent] = useState('');
   const [firDraft, setFirDraft] = useState('');
@@ -57,8 +56,7 @@ export function VoiceFirApp() {
   const [seriousnessLevel, setSeriousnessLevel] = useState<Seriousness | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
-  const [isFirValidated, setIsFirValidated] = useState(false);
-  const [currentStep, setCurrentStep] = useState<Step>('speak');
+  const [currentStep, setCurrentStep] = useState<Step>('record');
 
   const { toast } = useToast();
   const { transcript, isListening, startListening, stopListening, hasRecognitionSupport } = useSpeechRecognition();
@@ -94,13 +92,12 @@ export function VoiceFirApp() {
     setEditableFirDraft('');
     setCompletenessScore(null);
     setSeriousnessLevel(null);
-    setIsFirValidated(false);
 
     try {
       const result = await generateFirDraft({ incidentContent });
       setFirDraft(result.firDraft);
       setEditableFirDraft(result.firDraft);
-      setCurrentStep('review');
+      setCurrentStep('draft');
     } catch (error) {
       console.error("Error generating FIR draft:", error);
       toast({
@@ -108,7 +105,7 @@ export function VoiceFirApp() {
         title: "Generation Failed",
         description: "Could not generate the FIR draft. Please try again.",
       });
-      setCurrentStep('speak'); // Go back to input step on failure
+      setCurrentStep('record'); // Go back to input step on failure
     } finally {
       setIsGenerating(false);
     }
@@ -124,7 +121,7 @@ export function VoiceFirApp() {
         ]);
         setCompletenessScore(scoreResult.completenessScore);
         setSeriousnessLevel(seriousnessResult.seriousnessLevel as Seriousness);
-        setIsFirValidated(true);
+        setCurrentStep('validated');
         toast({
             title: "Validation Complete",
             description: `FIR Completeness: ${scoreResult.completenessScore}%. Seriousness: ${seriousnessResult.seriousnessLevel}.`,
@@ -136,7 +133,6 @@ export function VoiceFirApp() {
             title: "Validation Failed",
             description: "Could not analyze the FIR draft. Please try again.",
         });
-        setIsFirValidated(false);
     } finally {
         setIsValidating(false);
     }
@@ -153,8 +149,7 @@ export function VoiceFirApp() {
     setEditableFirDraft('');
     setCompletenessScore(null);
     setSeriousnessLevel(null);
-    setIsFirValidated(false);
-    setCurrentStep('speak');
+    setCurrentStep('record');
   }
 
   const isGenerateDisabled = useMemo(() => {
@@ -162,34 +157,26 @@ export function VoiceFirApp() {
   }, [isGenerating, incidentContent]);
   
   const isDownloadDisabled = useMemo(() => {
-    return !isFirValidated;
-  }, [isFirValidated]);
-
-  const stepIndicatorMap: Record<Step, 'speak' | 'review' | 'download'> = {
-    speak: 'speak',
-    processing: 'review',
-    review: 'download'
-  }
+    return currentStep !== 'validated' || isValidating;
+  }, [currentStep, isValidating]);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
       <header className="bg-primary text-primary-foreground shadow-md shrink-0 z-10">
-        <div className="container mx-auto p-4 flex items-center justify-between">
+        <div className="container mx-auto p-4 flex flex-col items-center justify-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold font-headline">VoiceFIR</h1>
-            <p className="text-sm text-primary-foreground/80">Your Voice for Justice</p>
+            <h1 className="text-2xl font-bold font-headline text-center">VoiceFIR</h1>
+            <p className="text-sm text-primary-foreground/80 text-center">Your Voice for Justice</p>
           </div>
-          <div className="w-1/2 max-w-md">
-            <StepIndicator currentStep={stepIndicatorMap[currentStep]} />
-          </div>
+          <ProcessFlowHeader currentStep={currentStep} />
         </div>
       </header>
 
       <main className="flex-grow flex flex-col items-center p-4 md:p-6 overflow-hidden">
         <div className="w-full max-w-3xl mx-auto h-full flex flex-col">
-            {currentStep === 'speak' && (
-              <ScrollArea className="h-full">
-                <div className="flex flex-col justify-center items-center text-center space-y-4 animate-in fade-in-50 duration-500 p-1">
+            {currentStep === 'record' && (
+              <ScrollArea className="flex-grow w-full">
+                <div className="flex flex-col justify-center items-center text-center space-y-4 animate-in fade-in-50 duration-500 p-1 h-full">
                     <div className='flex flex-col items-center justify-center space-y-4'>
                         <h2 className="text-3xl font-bold font-headline text-primary">Record Your Complaint</h2>
                         <p className="text-muted-foreground">No forms. No legal language. Speak freely.</p>
@@ -243,7 +230,7 @@ export function VoiceFirApp() {
                 </div>
             )}
 
-            {currentStep === 'review' && (
+            {(currentStep === 'draft' || currentStep === 'validated') && (
                   <ScrollArea className="h-full">
                     <Card className="shadow-lg border-primary/20 animate-in fade-in-50 duration-500 w-full">
                       <CardHeader>
@@ -271,7 +258,9 @@ export function VoiceFirApp() {
                                   value={editableFirDraft}
                                   onChange={(e) => {
                                       setEditableFirDraft(e.target.value);
-                                      setIsFirValidated(false); // Invalidate on edit
+                                      if (currentStep === 'validated') {
+                                        setCurrentStep('draft');
+                                      }
                                       setCompletenessScore(null);
                                       setSeriousnessLevel(null);
                                   }}
@@ -285,7 +274,7 @@ export function VoiceFirApp() {
                               Start New FIR
                           </Button>
                           <div className="flex gap-4">
-                             <Button size="lg" variant="secondary" onClick={handleValidation} disabled={isValidating}>
+                             <Button size="lg" variant="secondary" onClick={handleValidation} disabled={isValidating || currentStep === 'validated'}>
                                   {isValidating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
                                   Validate FIR
                               </Button>
