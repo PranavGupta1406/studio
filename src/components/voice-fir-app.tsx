@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import type { ChangeEvent } from 'react';
-import { Mic, MicOff, FileText, Download, Loader2, Circle, CheckCircle2 } from 'lucide-react';
+import { Mic, MicOff, FileText, Download, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
 import { generateFirDraft } from '@/ai/flows/generate-fir-draft';
@@ -59,39 +59,70 @@ export function VoiceFirApp() {
   const { transcript, isListening, startListening, stopListening, hasRecognitionSupport } = useSpeechRecognition();
   
   const firDraftRef = useRef<HTMLDivElement>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (transcript) {
-      setIncidentContent(prev => (prev ? `${prev} ${transcript}` : transcript));
+      setIncidentContent(prev => (prev ? `${prev} ${transcript}`.trim() : transcript));
     }
   }, [transcript]);
   
   useEffect(() => {
     const analyzeDraft = async () => {
-      if (editableFirDraft) {
-        try {
-          const [scoreResult, seriousnessResult] = await Promise.all([
-            computeCompletenessScore({ firDraft: editableFirDraft }),
-            determineSeriousnessLevel({ firDraft: editableFirDraft }),
-          ]);
-          setCompletenessScore(scoreResult.completenessScore);
-          setSeriousnessLevel(seriousnessResult.seriousnessLevel as Seriousness);
-          if(currentStep === 'speak') {
-            setCurrentStep('review');
-            setTimeout(() => firDraftRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-          }
-        } catch (error) {
-          console.error("Error analyzing draft:", error);
-          toast({
-            variant: "destructive",
-            title: "Analysis Failed",
-            description: "Could not compute score and seriousness. Please try again.",
-          });
+        if (firDraft && firDraft.length > 40) {
+            try {
+                const [scoreResult, seriousnessResult] = await Promise.all([
+                    computeCompletenessScore({ firDraft }),
+                    determineSeriousnessLevel({ firDraft }),
+                ]);
+                setCompletenessScore(scoreResult.completenessScore);
+                setSeriousnessLevel(seriousnessResult.seriousnessLevel as Seriousness);
+                if (currentStep === 'speak') {
+                    setCurrentStep('review');
+                    setTimeout(() => firDraftRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }
+            } catch (error) {
+                console.error("Error analyzing draft:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Analysis Failed",
+                    description: "Could not compute score and seriousness. Please try again.",
+                });
+            }
+        } else if (firDraft) {
+            setCompletenessScore(0);
         }
-      }
     };
     analyzeDraft();
-  }, [editableFirDraft, toast, currentStep]);
+}, [firDraft, toast, currentStep]);
+
+useEffect(() => {
+    const analyzeEditedDraft = async () => {
+        if (editableFirDraft && editableFirDraft.length > 40) {
+            try {
+                const [scoreResult, seriousnessResult] = await Promise.all([
+                    computeCompletenessScore({ firDraft: editableFirDraft }),
+                    determineSeriousnessLevel({ firDraft: editableFirDraft }),
+                ]);
+                setCompletenessScore(scoreResult.completenessScore);
+                setSeriousnessLevel(seriousnessResult.seriousnessLevel as Seriousness);
+            } catch (error) {
+                // Silently fail on edit, don't bother user with toasts
+                console.error("Error analyzing edited draft:", error);
+            }
+        } else if (editableFirDraft) {
+            setCompletenessScore(0);
+            setSeriousnessLevel(null);
+        }
+    };
+
+    const timeoutId = setTimeout(analyzeEditedDraft, 500); // Debounce analysis
+    return () => clearTimeout(timeoutId);
+}, [editableFirDraft]);
 
   const handleGenerate = async () => {
     if (incidentContent.trim().length <= 30) {
@@ -133,8 +164,8 @@ export function VoiceFirApp() {
   }, [isGenerating, incidentContent]);
   
   const isDownloadDisabled = useMemo(() => {
-    return !editableFirDraft;
-  }, [editableFirDraft]);
+    return !editableFirDraft || completenessScore < 40;
+  }, [editableFirDraft, completenessScore]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -156,25 +187,28 @@ export function VoiceFirApp() {
           <div id="speak-section" className="text-center space-y-4 mb-16">
             <h2 className="text-3xl font-bold font-headline text-primary">Record Your Complaint</h2>
             <p className="text-muted-foreground">No forms. No legal language. Speak freely.</p>
-            <div className="flex justify-center py-6">
-                <Button
-                  size="lg"
-                  className={cn(
-                    'rounded-full h-28 w-28 transition-all duration-300 shadow-lg',
-                    isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse' : 'bg-accent hover:bg-accent/90'
-                  )}
-                  onClick={isListening ? stopListening : startListening}
-                  disabled={!hasRecognitionSupport}
-                  aria-label={isListening ? 'Stop Recording' : 'Start Recording'}
-                >
-                  {isListening ? <MicOff size={48} /> : <Mic size={48} />}
-                </Button>
-            </div>
-            {hasRecognitionSupport ? (
-              <p className="text-sm text-muted-foreground">{isListening ? "Listening..." : "Tap to Speak"}</p>
-            ) : (
-              <p className="text-sm text-destructive">Voice input not supported in this browser. Please type instead.</p>
+            {isClient && hasRecognitionSupport && (
+                <div className="flex justify-center py-6">
+                    <Button
+                    size="lg"
+                    className={cn(
+                        'rounded-full h-28 w-28 transition-all duration-300 shadow-lg',
+                        isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse' : 'bg-accent hover:bg-accent/90'
+                    )}
+                    onClick={isListening ? stopListening : startListening}
+                    aria-label={isListening ? 'Stop Recording' : 'Start Recording'}
+                    >
+                    {isListening ? <MicOff size={48} /> : <Mic size={48} />}
+                    </Button>
+                </div>
             )}
+             {isClient && (
+                <p className="text-sm text-muted-foreground">
+                    {hasRecognitionSupport
+                        ? (isListening ? "Listening..." : "Tap to Speak")
+                        : "Voice not supported. Please type."}
+                </p>
+             )}
           </div>
           
           <div className="space-y-4">

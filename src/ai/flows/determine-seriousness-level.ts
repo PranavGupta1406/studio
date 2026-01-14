@@ -44,9 +44,9 @@ const determineSeriousnessLevelFlow = ai.defineFlow(
   async ({ firDraft }) => {
     const lowerCaseDraft = firDraft.toLowerCase();
     
-    const highKeywords = ['robbery', 'assault', 'weapon', 'violence', 'injured', 'attacked', 'kidnapped'];
-    const mediumKeywords = ['theft', 'threat', 'harassment', 'stolen', 'snatched', 'break-in'];
-    const lowKeywords = ['lost item', 'complaint', 'missing', 'lost my'];
+    const highKeywords = ['robbery', 'assault', 'weapon', 'violence', 'injured', 'attacked', 'kidnapped', 'threatened'];
+    const mediumKeywords = ['theft', 'harassment', 'stolen', 'snatched', 'break-in'];
+    const lowKeywords = ['lost item', 'complaint', 'missing', 'lost my', 'lost'];
 
     if (highKeywords.some(keyword => lowerCaseDraft.includes(keyword))) {
       return { seriousnessLevel: 'HIGH' };

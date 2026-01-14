@@ -42,6 +42,10 @@ const computeCompletenessScoreFlow = ai.defineFlow(
     outputSchema: ComputeCompletenessScoreOutputSchema,
   },
   async ({ firDraft }) => {
+    if (firDraft.length < 40) {
+      return { completenessScore: 0 };
+    }
+
     let score = 0;
     const lowerCaseDraft = firDraft.toLowerCase();
 
