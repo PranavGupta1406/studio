@@ -35,23 +35,29 @@ export async function determineSeriousnessLevel(
   return determineSeriousnessLevelFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'determineSeriousnessLevelPrompt',
-  input: {schema: DetermineSeriousnessLevelInputSchema},
-  output: {schema: DetermineSeriousnessLevelOutputSchema},
-  prompt: `Based on the following FIR draft, determine the seriousness level of the incident. The seriousness level can be HIGH, MEDIUM, or LOW. Consider keywords such as 'threatened', 'assault', 'weapon', 'robbery', 'injured', 'violence' for HIGH, 'theft', 'stolen', 'snatched', 'break-in' for MEDIUM, and 'lost item', 'missing', 'damage only' for LOW.
-
-FIR Draft: {{{firDraft}}}`,
-});
-
 const determineSeriousnessLevelFlow = ai.defineFlow(
   {
     name: 'determineSeriousnessLevelFlow',
     inputSchema: DetermineSeriousnessLevelInputSchema,
     outputSchema: DetermineSeriousnessLevelOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async ({ firDraft }) => {
+    const lowerCaseDraft = firDraft.toLowerCase();
+    
+    const highKeywords = ['robbery', 'assault', 'weapon', 'violence', 'injured', 'attacked', 'kidnapped'];
+    const mediumKeywords = ['theft', 'threat', 'harassment', 'stolen', 'snatched', 'break-in'];
+    const lowKeywords = ['lost item', 'complaint', 'missing', 'lost my'];
+
+    if (highKeywords.some(keyword => lowerCaseDraft.includes(keyword))) {
+      return { seriousnessLevel: 'HIGH' };
+    }
+    if (mediumKeywords.some(keyword => lowerCaseDraft.includes(keyword))) {
+      return { seriousnessLevel: 'MEDIUM' };
+    }
+    if (lowKeywords.some(keyword => lowerCaseDraft.includes(keyword))) {
+      return { seriousnessLevel: 'LOW' };
+    }
+    
+    return { seriousnessLevel: 'LOW' };
   }
 );

@@ -41,44 +41,35 @@ const computeCompletenessScoreFlow = ai.defineFlow(
     inputSchema: ComputeCompletenessScoreInputSchema,
     outputSchema: ComputeCompletenessScoreOutputSchema,
   },
-  async input => {
-    const {
-      firDraft,
-    } = input;
-
+  async ({ firDraft }) => {
     let score = 0;
+    const lowerCaseDraft = firDraft.toLowerCase();
 
-    if (firDraft.length < 40) {
-      score = 0;
-    } else {
-      if (firDraft.toLowerCase().includes('time') || firDraft.toLowerCase().includes('date')) {
-        score += 20;
-      }
-      if (firDraft.toLowerCase().includes('location')) {
-        score += 20;
-      }
-      if (
-        firDraft.toLowerCase().includes('theft') ||
-        firDraft.toLowerCase().includes('robbery') ||
-        firDraft.toLowerCase().includes('assault')
-      ) {
-        score += 20;
-      }
-      if (
-        firDraft.toLowerCase().includes('accused') ||
-        firDraft.toLowerCase().includes('unknown persons')
-      ) {
-        score += 20;
-      }
-      if (
-        firDraft.toLowerCase().includes('request') ||
-        firDraft.toLowerCase().includes('statement') ||
-        firDraft.toLowerCase().includes('victim')
-      ) {
-        score += 20;
-      }
+    // +20 if time is mentioned
+    if (/\b(time|date|am|pm|\d{1,2}:\d{2}|\d{1,2}\s?(am|pm)|yesterday|today|morning|afternoon|evening|night)\b/.test(lowerCaseDraft)) {
+      score += 20;
+    }
+    
+    // +20 if location is mentioned
+    if (/\b(location|place|at|near|in front of|behind|address|road|street|market)\b/.test(lowerCaseDraft)) {
+      score += 20;
+    }
+    
+    // +20 if incident type is identifiable (theft, robbery, assault, etc.)
+    if (/\b(theft|stole|robbery|robbed|assault|attacked|hit|punched|harassment|harassed|threat|threatened|snatched|lost|missing)\b/.test(lowerCaseDraft)) {
+      score += 20;
     }
 
-    return {completenessScore: score};
+    // +20 if accused description exists
+    if (/\b(accused|person|man|woman|boy|girl|they|he|she|unknown person)\b/.test(lowerCaseDraft)) {
+      score += 20;
+    }
+
+    // +20 if property loss or harm is mentioned
+    if (/\b(property|item|cash|money|phone|wallet|jewelry|bag|bike|car|loss|harm|injured|hurt|bleeding|pain)\b/.test(lowerCaseDraft)) {
+      score += 20;
+    }
+
+    return { completenessScore: Math.min(100, score) };
   }
 );

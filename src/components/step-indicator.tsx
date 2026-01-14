@@ -10,9 +10,9 @@ interface StepIndicatorProps {
 }
 
 const steps: { id: Step; name: string; icon: React.ElementType }[] = [
-  { id: 'speak', name: 'Speak or Type', icon: Mic },
-  { id: 'review', name: 'Review & Analyze', icon: FileText },
-  { id: 'download', name: 'Download', icon: Download },
+  { id: 'speak', name: 'Record Complaint', icon: Mic },
+  { id: 'review', name: 'Review Draft', icon: FileText },
+  { id: 'download', name: 'Validate & Download', icon: Download },
 ];
 
 export function StepIndicator({ currentStep }: StepIndicatorProps) {
@@ -26,14 +26,14 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
             <div className="flex items-center">
               <div
                 className={cn(
-                  "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full",
-                  stepIdx <= currentStepIndex ? 'bg-accent' : 'bg-secondary'
+                  "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors duration-300",
+                  stepIdx <= currentStepIndex ? 'bg-primary' : 'bg-secondary'
                 )}
               >
                 <step.icon
                   className={cn(
-                    "h-6 w-6",
-                    stepIdx <= currentStepIndex ? 'text-accent-foreground' : 'text-secondary-foreground'
+                    "h-6 w-6 transition-colors duration-300",
+                    stepIdx <= currentStepIndex ? 'text-primary-foreground' : 'text-secondary-foreground'
                   )}
                   aria-hidden="true"
                 />
@@ -42,7 +42,7 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
                 <span className="text-sm font-medium text-muted-foreground">Step {stepIdx + 1}</span>
                 <span
                   className={cn(
-                    "text-sm font-semibold",
+                    "text-sm font-semibold transition-colors duration-300",
                     stepIdx <= currentStepIndex ? 'text-foreground' : 'text-muted-foreground'
                   )}
                 >
@@ -52,8 +52,8 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
             </div>
 
             {stepIdx !== steps.length - 1 && (
-              <div className="absolute inset-0 top-4 ml-10 w-full" aria-hidden="true">
-                  <div className={cn("h-0.5 w-full", stepIdx < currentStepIndex ? 'bg-accent' : 'bg-border')} />
+              <div className="absolute left-0 top-5 -z-10 h-0.5 w-full bg-border" aria-hidden="true">
+                  <div className={cn("h-full bg-primary transition-all duration-300", stepIdx < currentStepIndex ? 'w-full' : 'w-0')} />
               </div>
             )}
           </li>

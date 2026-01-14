@@ -31,7 +31,13 @@ const prompt = ai.definePrompt({
   name: 'generateFirDraftPrompt',
   input: {schema: GenerateFirDraftInputSchema},
   output: {schema: GenerateFirDraftOutputSchema},
-  prompt: `You are a helpful AI assistant that generates a structured FIR (First Information Report) draft based on the incident description provided by the user. The FIR draft must include the following sections:\n\n- Date & Time\n- Location\n- Incident Description\n- Accused (or Unknown Persons)\n- Victim Statement\n- Closing request for action\n\nUse the following incident description to generate the FIR draft:\n\nIncident Description: {{{incidentContent}}}`,
+  prompt: `Convert the following incident description into a realistic Indian police FIR.
+Write it in plain, natural language as if recorded by a police officer.
+Avoid legal jargon, avoid excessive formality, and do not sound like an AI.
+Keep it factual, human, and slightly imperfect.
+Do not add unnecessary sections or IPC references unless clearly implied.
+
+Incident Description: {{{incidentContent}}}`,
 });
 
 const generateFirDraftFlow = ai.defineFlow(
