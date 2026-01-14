@@ -63,11 +63,8 @@ The platform simplifies FIR filing while maintaining clarity and structure.
 
 ---
 
-## ⚠️ Disclaimer
-This is an AI-generated FIR draft for assistance purposes only.  
+## ⚠️ Disclaimer  
 The FIR becomes legally valid only after review and registration by the police.
 
 ---
 
-Built for **Innovate 3.0 – Hack to Build**  
-Jaypee Institute of Information Technology, Noida
