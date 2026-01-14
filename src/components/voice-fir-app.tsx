@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { ChangeEvent } from 'react';
 import { Mic, MicOff, FileText, Download, Loader2, ShieldCheck, FilePlus, BrainCircuit } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ import { StepIndicator } from '@/components/step-indicator';
 import { SeriousnessBadge, type Seriousness } from '@/components/seriousness-badge';
 import { generatePdf } from '@/lib/pdf-generator';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Step = 'speak' | 'processing' | 'review';
 
@@ -185,9 +186,10 @@ export function VoiceFirApp() {
       </header>
 
       <main className="flex-grow flex flex-col items-center p-4 md:p-6 overflow-hidden">
-        <div className="w-full max-w-3xl mx-auto flex-grow flex flex-col justify-center">
+        <div className="w-full max-w-3xl mx-auto h-full flex flex-col">
             {currentStep === 'speak' && (
-                <div className="flex flex-col justify-center items-center text-center space-y-4 animate-in fade-in-50 duration-500 h-full">
+              <ScrollArea className="h-full">
+                <div className="flex flex-col justify-center items-center text-center space-y-4 animate-in fade-in-50 duration-500 p-1">
                     <div className='flex flex-col items-center justify-center space-y-4'>
                         <h2 className="text-3xl font-bold font-headline text-primary">Record Your Complaint</h2>
                         <p className="text-muted-foreground">No forms. No legal language. Speak freely.</p>
@@ -230,10 +232,11 @@ export function VoiceFirApp() {
                         </Button>
                     </div>
                 </div>
+              </ScrollArea>
             )}
 
             {currentStep === 'processing' && (
-                <div className="flex flex-col items-center justify-center text-center space-y-4 p-8 animate-in fade-in-50 duration-500">
+                <div className="flex flex-col items-center justify-center text-center space-y-4 p-8 animate-in fade-in-50 duration-500 h-full">
                     <Loader2 className="h-16 w-16 animate-spin text-primary"/>
                     <h2 className="text-2xl font-medium text-foreground">Processing your complaint securely…</h2>
                     <p className="text-muted-foreground">Structuring FIR as per Indian legal format.</p>
@@ -241,57 +244,59 @@ export function VoiceFirApp() {
             )}
 
             {currentStep === 'review' && (
-                  <Card className="shadow-lg border-primary/20 animate-in fade-in-50 duration-500 w-full">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <FileText className="text-primary"/>
-                        Review, Validate & Download Your FIR
-                      </CardTitle>
-                      <CardDescription>This is an AI-generated draft. Please review and edit it carefully, then validate to enable download.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="grid md:grid-cols-2 gap-6 items-center">
-                            <div className="flex flex-col items-center space-y-2">
-                                <h3 className="font-semibold text-center">FIR Completeness</h3>
-                                {completenessScore !== null ? <CircularProgress value={completenessScore} /> : <div className="w-32 h-32 flex items-center justify-center text-muted-foreground">Not validated</div>}
-                            </div>
-                            <div className="flex flex-col items-center space-y-2">
-                                <h3 className="font-semibold">Seriousness Level</h3>
-                                <SeriousnessBadge level={seriousnessLevel} />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <label htmlFor="fir-draft-editor" className="font-semibold">Edit Draft</label>
-                            <Textarea
-                                id="fir-draft-editor"
-                                value={editableFirDraft}
-                                onChange={(e) => {
-                                    setEditableFirDraft(e.target.value);
-                                    setIsFirValidated(false); // Invalidate on edit
-                                    setCompletenessScore(null);
-                                    setSeriousnessLevel(null);
-                                }}
-                                className="min-h-[250px] text-base font-serif leading-relaxed p-4 bg-white border-gray-300 rounded-md"
-                            />
-                        </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <Button variant="outline" onClick={handleStartNew}>
-                            <FilePlus className="mr-2 h-5 w-5" />
-                            Start New FIR
-                        </Button>
-                        <div className="flex gap-4">
-                           <Button size="lg" variant="secondary" onClick={handleValidation} disabled={isValidating}>
-                                {isValidating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
-                                Validate FIR
-                            </Button>
-                            <Button size="lg" onClick={handleDownload} disabled={isDownloadDisabled}>
-                                <Download className="mr-2 h-5 w-5" />
-                                Download PDF
-                            </Button>
-                        </div>
-                    </CardFooter>
-                  </Card>
+                  <ScrollArea className="h-full">
+                    <Card className="shadow-lg border-primary/20 animate-in fade-in-50 duration-500 w-full">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3">
+                          <FileText className="text-primary"/>
+                          Review, Validate & Download Your FIR
+                        </CardTitle>
+                        <CardDescription>This is an AI-generated draft. Please review and edit it carefully, then validate to enable download.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                          <div className="grid md:grid-cols-2 gap-6 items-center">
+                              <div className="flex flex-col items-center space-y-2">
+                                  <h3 className="font-semibold text-center">FIR Completeness</h3>
+                                  {completenessScore !== null ? <CircularProgress value={completenessScore} /> : <div className="w-32 h-32 flex items-center justify-center text-muted-foreground">Not validated</div>}
+                              </div>
+                              <div className="flex flex-col items-center space-y-2">
+                                  <h3 className="font-semibold">Seriousness Level</h3>
+                                  <SeriousnessBadge level={seriousnessLevel} />
+                              </div>
+                          </div>
+                          <div className="space-y-2">
+                              <label htmlFor="fir-draft-editor" className="font-semibold">Edit Draft</label>
+                              <Textarea
+                                  id="fir-draft-editor"
+                                  value={editableFirDraft}
+                                  onChange={(e) => {
+                                      setEditableFirDraft(e.target.value);
+                                      setIsFirValidated(false); // Invalidate on edit
+                                      setCompletenessScore(null);
+                                      setSeriousnessLevel(null);
+                                  }}
+                                  className="min-h-[250px] text-base font-serif leading-relaxed p-4 bg-white border-gray-300 rounded-md"
+                              />
+                          </div>
+                      </CardContent>
+                      <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                          <Button variant="outline" onClick={handleStartNew}>
+                              <FilePlus className="mr-2 h-5 w-5" />
+                              Start New FIR
+                          </Button>
+                          <div className="flex gap-4">
+                             <Button size="lg" variant="secondary" onClick={handleValidation} disabled={isValidating}>
+                                  {isValidating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
+                                  Validate FIR
+                              </Button>
+                              <Button size="lg" onClick={handleDownload} disabled={isDownloadDisabled}>
+                                  <Download className="mr-2 h-5 w-5" />
+                                  Download PDF
+                              </Button>
+                          </div>
+                      </CardFooter>
+                    </Card>
+                  </ScrollArea>
             )}
         </div>
       </main>
