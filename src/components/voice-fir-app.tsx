@@ -187,8 +187,8 @@ export function VoiceFirApp() {
       <main className="flex-grow flex flex-col items-center p-4 md:p-6 overflow-hidden">
         <div className="w-full max-w-3xl mx-auto flex-grow flex flex-col justify-center">
             {currentStep === 'speak' && (
-                <div className="flex flex-col items-center text-center space-y-4 animate-in fade-in-50 duration-500 h-full">
-                    <div className="flex-grow flex flex-col items-center justify-center space-y-4">
+                <div className="flex flex-col justify-center items-center text-center space-y-4 animate-in fade-in-50 duration-500 h-full">
+                    <div className='flex flex-col items-center justify-center space-y-4'>
                         <h2 className="text-3xl font-bold font-headline text-primary">Record Your Complaint</h2>
                         <p className="text-muted-foreground">No forms. No legal language. Speak freely.</p>
                         {isClient && hasRecognitionSupport && (
@@ -223,7 +223,7 @@ export function VoiceFirApp() {
                             />
                         </div>
                     </div>
-                    <div className="flex-shrink-0 flex justify-center py-4">
+                    <div className="flex justify-center py-4">
                         <Button size="lg" onClick={handleGenerate} disabled={isGenerateDisabled}>
                             <BrainCircuit className="mr-2 h-5 w-5" />
                             Generate FIR Draft
