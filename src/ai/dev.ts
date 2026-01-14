@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/determine-seriousness-level.ts';
+import '@/ai/flows/compute-completeness-score.ts';
+import '@/ai/flows/generate-fir-draft.ts';
