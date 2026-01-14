@@ -1,5 +1,4 @@
 import { jsPDF } from "jspdf";
-import 'jspdf-autotable'; // Ensure this is installed or handle it
 
 export function generatePdf(firDraft: string) {
   const firId = `VF-${Date.now()}`;
@@ -30,10 +29,6 @@ export function generatePdf(firDraft: string) {
   doc.setFontSize(12);
   const splitText = doc.splitTextToSize(firDraft, doc.internal.pageSize.getWidth() - 40);
   doc.text(splitText, 20, 65);
-  
-  // Get the y position after the text
-  const finalY = (doc as any).lastAutoTable.finalY || 70 + (splitText.length * 5);
-
 
   // Footer
   const pageHeight = doc.internal.pageSize.getHeight();

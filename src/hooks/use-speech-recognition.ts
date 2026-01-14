@@ -22,7 +22,7 @@ const getRecognition = () => {
     const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
-        recognition.continuous = true; // Keep listening even after silence
+        recognition.continuous = true; 
         recognition.interimResults = true;
         recognition.lang = 'en-IN';
         return recognition;
@@ -37,17 +37,13 @@ export function useSpeechRecognition({ onTranscript }: UseSpeechRecognitionOptio
 
   const handleResult = useCallback((event: SpeechRecognitionEvent) => {
     let finalTranscript = '';
-    let interimTranscript = '';
-
+    
     for (let i = event.resultIndex; i < event.results.length; ++i) {
       if (event.results[i].isFinal) {
         finalTranscript += event.results[i][0].transcript;
-      } else {
-        interimTranscript += event.results[i][0].transcript;
       }
     }
     
-    // We only care about the final transcript to avoid spamming the state
     if (finalTranscript) {
       onTranscript(finalTranscript);
     }
@@ -57,8 +53,8 @@ export function useSpeechRecognition({ onTranscript }: UseSpeechRecognitionOptio
     let errorMessage = 'An unknown speech recognition error occurred.';
     switch (event.error) {
         case 'network':
-            errorMessage = 'Network error with speech recognition. Please check your connection.';
-            break;
+             // This error is often transient and can be ignored to prevent user disruption.
+            return;
         case 'no-speech':
             // This error is ignored because continuous mode can trigger it during pauses.
             return;
@@ -82,17 +78,14 @@ export function useSpeechRecognition({ onTranscript }: UseSpeechRecognitionOptio
     setIsListening(false);
   }, [toast]);
 
-  // This handleEnd is now only for cleanup when the component unmounts
   useEffect(() => {
     const rec = recognitionRef.current;
     if (rec) {
       const handleEnd = () => {
-        // Only stop listening if it was explicitly stopped by the user
-        if (isListening) {
-           // It can stop for other reasons (e.g. network error), we can try to restart it
-           // but for now we will just stop it to avoid infinite loops
-            setIsListening(false);
-        }
+        // The 'end' event can fire for various reasons, including network issues or user stopping.
+        // We only change state if it was programmatically stopped.
+        // This avoids race conditions where an error might set isListening to false
+        // right before this does.
       };
 
       rec.addEventListener('result', handleResult);
@@ -108,7 +101,7 @@ export function useSpeechRecognition({ onTranscript }: UseSpeechRecognitionOptio
         }
       };
     }
-  }, [handleResult, handleError, isListening]);
+  }, [handleResult, handleError]);
 
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
@@ -116,9 +109,8 @@ export function useSpeechRecognition({ onTranscript }: UseSpeechRecognitionOptio
         recognitionRef.current.start();
         setIsListening(true);
       } catch (e: any) {
-        // This can happen if recognition is already running
         if (e.name === 'InvalidStateError') {
-            // It's already running, so we'll just ensure our state is correct
+            // Already running
             setIsListening(true);
         } else {
             console.error("Error starting recognition:", e);
@@ -139,6 +131,7 @@ export function useSpeechRecognition({ onTranscript }: UseSpeechRecognitionOptio
         setIsListening(false);
       } catch(e) {
         console.error("Error stopping recognition:", e);
+        // Force state to false even if stop() fails.
         setIsListening(false);
       }
     }
