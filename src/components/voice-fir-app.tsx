@@ -172,7 +172,7 @@ export function VoiceFirApp() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
-      <header className="bg-primary text-primary-foreground shadow-md shrink-0">
+      <header className="bg-primary text-primary-foreground shadow-md shrink-0 z-10">
         <div className="container mx-auto p-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold font-headline">VoiceFIR</h1>
@@ -184,48 +184,50 @@ export function VoiceFirApp() {
         </div>
       </header>
 
-      <main className="flex-grow flex flex-col items-center justify-center p-4 md:p-8 relative">
-        <div className="w-full max-w-3xl mx-auto">
+      <main className="flex-grow flex flex-col items-center p-4 md:p-6 overflow-hidden">
+        <div className="w-full max-w-3xl mx-auto flex-grow flex flex-col justify-center">
             {currentStep === 'speak' && (
-                <div className="flex flex-col items-center text-center space-y-6 animate-in fade-in-50 duration-500">
-                    <h2 className="text-3xl font-bold font-headline text-primary">Record Your Complaint</h2>
-                    <p className="text-muted-foreground">No forms. No legal language. Speak freely.</p>
-                    {isClient && hasRecognitionSupport && (
-                        <div className="flex justify-center py-4">
-                            <Button
-                                size="lg"
-                                className={cn(
-                                    'rounded-full h-28 w-28 transition-all duration-300 shadow-lg',
-                                    isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse' : 'bg-accent hover:bg-accent/90'
-                                )}
-                                onClick={isListening ? stopListening : startListening}
-                                aria-label={isListening ? 'Stop Recording' : 'Start Recording'}
-                            >
-                            {isListening ? <MicOff size={48} /> : <Mic size={48} />}
-                            </Button>
+                <div className="flex flex-col items-center text-center space-y-4 animate-in fade-in-50 duration-500 h-full">
+                    <div className="flex-grow flex flex-col items-center justify-center space-y-4">
+                        <h2 className="text-3xl font-bold font-headline text-primary">Record Your Complaint</h2>
+                        <p className="text-muted-foreground">No forms. No legal language. Speak freely.</p>
+                        {isClient && hasRecognitionSupport && (
+                            <div className="flex justify-center py-2">
+                                <Button
+                                    size="lg"
+                                    className={cn(
+                                        'rounded-full h-28 w-28 transition-all duration-300 shadow-lg',
+                                        isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse' : 'bg-accent hover:bg-accent/90'
+                                    )}
+                                    onClick={isListening ? stopListening : startListening}
+                                    aria-label={isListening ? 'Stop Recording' : 'Start Recording'}
+                                >
+                                {isListening ? <MicOff size={48} /> : <Mic size={48} />}
+                                </Button>
+                            </div>
+                        )}
+                        {isClient && (
+                            <p className="text-sm text-muted-foreground">
+                                {hasRecognitionSupport ? (isListening ? "Listening..." : "Tap to Speak") : "Voice not supported. Please type."}
+                            </p>
+                        )}
+                        <div className="w-full space-y-4 pt-2">
+                            <label htmlFor="incident-textarea" className="font-semibold text-lg text-primary sr-only">You can speak, type, or do both.</label>
+                            <Textarea
+                                id="incident-textarea"
+                                placeholder="Or type your incident in your own words here..."
+                                value={incidentContent}
+                                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setIncidentContent(e.target.value)}
+                                className="min-h-[120px] text-base bg-card border-border focus:ring-accent"
+                                rows={5}
+                            />
                         </div>
-                    )}
-                    {isClient && (
-                        <p className="text-sm text-muted-foreground">
-                            {hasRecognitionSupport ? (isListening ? "Listening..." : "Tap to Speak") : "Voice not supported. Please type."}
-                        </p>
-                    )}
-                    <div className="w-full space-y-4 pt-4">
-                        <label htmlFor="incident-textarea" className="font-semibold text-lg text-primary sr-only">You can speak, type, or do both.</label>
-                        <Textarea
-                            id="incident-textarea"
-                            placeholder="Or type your incident in your own words here..."
-                            value={incidentContent}
-                            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setIncidentContent(e.target.value)}
-                            className="min-h-[150px] text-base bg-card border-border focus:ring-accent"
-                            rows={6}
-                        />
-                        <div className="flex justify-center pt-2">
-                            <Button size="lg" onClick={handleGenerate} disabled={isGenerateDisabled}>
-                                <BrainCircuit className="mr-2 h-5 w-5" />
-                                Generate FIR Draft
-                            </Button>
-                        </div>
+                    </div>
+                    <div className="flex-shrink-0 flex justify-center py-4">
+                        <Button size="lg" onClick={handleGenerate} disabled={isGenerateDisabled}>
+                            <BrainCircuit className="mr-2 h-5 w-5" />
+                            Generate FIR Draft
+                        </Button>
                     </div>
                 </div>
             )}
@@ -294,7 +296,7 @@ export function VoiceFirApp() {
         </div>
       </main>
 
-      <footer className="text-center p-3 text-muted-foreground text-xs border-t shrink-0">
+      <footer className="text-center p-3 text-muted-foreground text-xs border-t shrink-0 z-10">
         <p>&copy; {new Date().getFullYear()} VoiceFIR. All Rights Reserved. AI-generated draft for review.</p>
       </footer>
     </div>
