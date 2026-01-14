@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useToast } from './use-toast';
 
 interface SpeechRecognitionHook {
   transcript: string;
@@ -20,7 +21,7 @@ const getRecognition = () => {
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
         recognition.continuous = false;
-        recognition.interimResults = true; // Changed to true for live feedback
+        recognition.interimResults = true;
         recognition.lang = 'en-IN';
         return recognition;
     }
@@ -31,6 +32,7 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(getRecognition());
+  const { toast } = useToast();
 
   const handleResult = useCallback((event: SpeechRecognitionEvent) => {
     let finalTranscript = '';
@@ -50,9 +52,33 @@ export function useSpeechRecognition(): SpeechRecognitionHook {
   }, []);
 
   const handleError = useCallback((event: SpeechRecognitionErrorEvent) => {
-    console.error('Speech recognition error:', event.error);
+    let errorMessage = 'An unknown speech recognition error occurred.';
+    switch (event.error) {
+        case 'network':
+            errorMessage = 'Network error with speech recognition. Please check your connection.';
+            break;
+        case 'no-speech':
+            errorMessage = 'No speech was detected. Please try again.';
+            break;
+        case 'audio-capture':
+            errorMessage = 'Could not access the microphone. Please check permissions.';
+            break;
+        case 'not-allowed':
+            errorMessage = 'Microphone access was denied. Please allow access to use this feature.';
+            break;
+        case 'service-not-allowed':
+             errorMessage = 'Speech recognition service is not allowed. You may need to enable it in your browser settings.';
+             break;
+    }
+    
+    toast({
+        variant: 'destructive',
+        title: 'Speech Recognition Error',
+        description: errorMessage
+    });
+
     setIsListening(false);
-  }, []);
+  }, [toast]);
 
 
   useEffect(() => {
