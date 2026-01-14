@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useTransition } from 'react';
 import type { ChangeEvent } from 'react';
 import { Mic, MicOff, FileText, Download, Loader2, ShieldCheck, FilePlus, BrainCircuit } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -57,9 +57,17 @@ export function VoiceFirApp() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>('record');
+  const [isPending, startTransition] = useTransition();
 
   const { toast } = useToast();
-  const { transcript, isListening, startListening, stopListening, hasRecognitionSupport } = useSpeechRecognition();
+  
+  const handleTranscript = (text: string) => {
+      setIncidentContent(prev => (prev ? `${prev} ${text}`.trim() : text));
+  }
+
+  const { isListening, startListening, stopListening, hasRecognitionSupport } = useSpeechRecognition({
+      onTranscript: handleTranscript,
+  });
   
   const [isClient, setIsClient] = useState(false);
 
@@ -70,12 +78,15 @@ export function VoiceFirApp() {
         document.body.style.overflow = 'auto';
     }
   }, []);
+  
+  const handleToggleListening = () => {
+      if(isListening) {
+          stopListening();
+      } else {
+          startListening();
+      }
+  }
 
-  useEffect(() => {
-    if (transcript) {
-      setIncidentContent(prev => (prev ? `${prev} ${transcript}`.trim() : transcript));
-    }
-  }, [transcript]);
 
   const handleGenerate = async () => {
     if (incidentContent.trim().length <= 30) {
@@ -86,12 +97,14 @@ export function VoiceFirApp() {
       });
       return;
     }
-    setCurrentStep('processing');
-    setIsGenerating(true);
-    setFirDraft('');
-    setEditableFirDraft('');
-    setCompletenessScore(null);
-    setSeriousnessLevel(null);
+    startTransition(() => {
+        setCurrentStep('processing');
+        setIsGenerating(true);
+        setFirDraft('');
+        setEditableFirDraft('');
+        setCompletenessScore(null);
+        setSeriousnessLevel(null);
+    });
 
     try {
       const result = await generateFirDraft({ incidentContent });
@@ -176,7 +189,7 @@ export function VoiceFirApp() {
         <div className="w-full max-w-3xl mx-auto h-full flex flex-col">
             {currentStep === 'record' && (
               <ScrollArea className="flex-grow w-full">
-                <div className="flex flex-col justify-center items-center text-center space-y-4 animate-in fade-in-50 duration-500 p-1 h-full">
+                <div className="flex flex-col justify-center items-center text-center space-y-4 animate-in fade-in-50 duration-500 p-1 min-h-[calc(100vh-220px)]">
                     <div className='flex flex-col items-center justify-center space-y-4'>
                         <h2 className="text-3xl font-bold font-headline text-primary">Record Your Complaint</h2>
                         <p className="text-muted-foreground">No forms. No legal language. Speak freely.</p>
@@ -188,7 +201,7 @@ export function VoiceFirApp() {
                                         'rounded-full h-28 w-28 transition-all duration-300 shadow-lg',
                                         isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse' : 'bg-accent hover:bg-accent/90'
                                     )}
-                                    onClick={isListening ? stopListening : startListening}
+                                    onClick={handleToggleListening}
                                     aria-label={isListening ? 'Stop Recording' : 'Start Recording'}
                                 >
                                 {isListening ? <MicOff size={48} /> : <Mic size={48} />}
@@ -197,7 +210,7 @@ export function VoiceFirApp() {
                         )}
                         {isClient && (
                             <p className="text-sm text-muted-foreground">
-                                {hasRecognitionSupport ? (isListening ? "Listening..." : "Tap to Speak") : "Voice not supported. Please type."}
+                                {hasRecognitionSupport ? (isListening ? "Listening... Click to stop." : "Tap to Speak") : "Voice not supported. Please type."}
                             </p>
                         )}
                         <div className="w-full space-y-4 pt-2">
